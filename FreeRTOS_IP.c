@@ -2988,7 +2988,8 @@ void vReturnEthernetFrame( NetworkBufferDescriptor_t * pxNetworkBuffer,
 /*-----------------------------------------------------------*/
 
 
-#if ( ipconfigHAS_PRINTF != 0 )
+//#if ( ipconfigHAS_PRINTF != 0 )
+#if ( ipconfigHAS_PRINTF != 0 && 0 )
 
     #ifndef ipMONITOR_MAX_HEAP
 

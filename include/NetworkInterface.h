@@ -41,6 +41,8 @@
 /* The following function is defined only when BufferAllocation_1.c is linked in the project. */
     BaseType_t xGetPhyLinkStatus( void );
 
+    StreamBuffer_t * GetRecvBuffer( void );
+
     #ifdef __cplusplus
         } /* extern "C" */
     #endif

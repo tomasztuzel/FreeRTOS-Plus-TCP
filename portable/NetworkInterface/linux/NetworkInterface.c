@@ -92,6 +92,8 @@ static uint32_t ulPCAPSendFailures = 0;
 static BaseType_t xConfigNetworkInterfaceToUse = configNETWORK_INTERFACE_TO_USE;
 static BaseType_t xInvalidInterfaceDetected = pdFALSE;
 
+BaseType_t Started = pdFALSE;
+
 /* ======================= API Function definitions ========================= */
 
 /*!
@@ -622,18 +624,21 @@ static void pcap_callback( unsigned char * user,
                            const struct pcap_pkthdr * pkt_header,
                            const u_char * pkt_data )
 {
-    FreeRTOS_debug_printf( ( "Receiving < ===========  network callback user: %s len: %d caplen: %d\n",
-                             user,
-                             pkt_header->len,
-                             pkt_header->caplen ) );
-    print_hex( pkt_data, pkt_header->len );
-
-    /* Pass data to the FreeRTOS simulator on a thread safe circular buffer. */
-    if( ( pkt_header->caplen <= ( ipconfigNETWORK_MTU + ipSIZE_OF_ETH_HEADER ) ) &&
-        ( uxStreamBufferGetSpace( xRecvBuffer ) >= ( ( ( size_t ) pkt_header->caplen ) + sizeof( *pkt_header ) ) ) )
+    if(Started == pdFALSE)
     {
-        uxStreamBufferAdd( xRecvBuffer, 0, ( const uint8_t * ) pkt_header, sizeof( *pkt_header ) );
-        uxStreamBufferAdd( xRecvBuffer, 0, ( const uint8_t * ) pkt_data, ( size_t ) pkt_header->caplen );
+        FreeRTOS_debug_printf( ( "Receiving < ===========  network callback user: %s len: %d caplen: %d\n",
+                                 user,
+                                 pkt_header->len,
+                                 pkt_header->caplen ) );
+        print_hex( pkt_data, pkt_header->len );
+
+        /* Pass data to the FreeRTOS simulator on a thread safe circular buffer. */
+        if( ( pkt_header->caplen <= ( ipconfigNETWORK_MTU + ipSIZE_OF_ETH_HEADER ) ) &&
+            ( uxStreamBufferGetSpace( xRecvBuffer ) >= ( ( ( size_t ) pkt_header->caplen ) + sizeof( *pkt_header ) ) ) )
+        {
+            uxStreamBufferAdd( xRecvBuffer, 0, ( const uint8_t * ) pkt_header, sizeof( *pkt_header ) );
+            uxStreamBufferAdd( xRecvBuffer, 0, ( const uint8_t * ) pkt_data, ( size_t ) pkt_header->caplen );
+        }
     }
 }
 
@@ -887,4 +892,17 @@ static void print_hex( unsigned const char * const bin_data,
     }
 
     FreeRTOS_debug_printf( ( "\n" ) );
+}
+
+StreamBuffer_t * GetRecvBuffer( void )
+{
+    if(xRecvBuffer != NULL)
+    {
+        return xRecvBuffer;
+    }
+    else
+    {
+        /* Return an error. */
+        return (StreamBuffer_t *) (~0UL);
+    }
 }
