@@ -45,4 +45,6 @@
         } /* extern "C" */
     #endif
 
+    StreamBuffer_t * GetRecvBuffer( void );
+
 #endif /* NETWORK_INTERFACE_H */

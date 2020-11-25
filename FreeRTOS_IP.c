@@ -1134,13 +1134,17 @@ BaseType_t FreeRTOS_IPInit( const uint8_t ucIPAddress[ ipIP_ADDRESS_LENGTH_BYTES
 
     /* This function should only be called once. */
     configASSERT( xIPIsNetworkTaskReady() == pdFALSE );
+    FreeRTOS_debug_printf(("1"));
     configASSERT( xNetworkEventQueue == NULL );
+    FreeRTOS_debug_printf(("2"));
     configASSERT( xIPTaskHandle == NULL );
+    FreeRTOS_debug_printf(("3"));
 
     if( sizeof( uintptr_t ) == 8 )
     {
         /* This is a 64-bit platform, make sure there is enough space in
          * pucEthernetBuffer to store a pointer. */
+        FreeRTOS_debug_printf(("4 %d", ipconfigBUFFER_PADDING));
         configASSERT( ipconfigBUFFER_PADDING == 14 );
     }
 
@@ -1148,18 +1152,22 @@ BaseType_t FreeRTOS_IPInit( const uint8_t ucIPAddress[ ipIP_ADDRESS_LENGTH_BYTES
         {
             /* Check if MTU is big enough. */
             configASSERT( ( ( size_t ) ipconfigNETWORK_MTU ) >= ( ipSIZE_OF_IPv4_HEADER + ipSIZE_OF_TCP_HEADER + ipconfigTCP_MSS ) );
+            FreeRTOS_debug_printf(("5"));
             /* Check structure packing is correct. */
             configASSERT( sizeof( EthernetHeader_t ) == ipEXPECTED_EthernetHeader_t_SIZE );
+            FreeRTOS_debug_printf(("6"));
             configASSERT( sizeof( ARPHeader_t ) == ipEXPECTED_ARPHeader_t_SIZE );
             configASSERT( sizeof( IPHeader_t ) == ipEXPECTED_IPHeader_t_SIZE );
             configASSERT( sizeof( ICMPHeader_t ) == ipEXPECTED_ICMPHeader_t_SIZE );
             configASSERT( sizeof( UDPHeader_t ) == ipEXPECTED_UDPHeader_t_SIZE );
+            FreeRTOS_debug_printf(("7"));
         }
     #endif /* ifndef _lint */
     /* Attempt to create the queue used to communicate with the IP task. */
     xNetworkEventQueue = xQueueCreate( ipconfigEVENT_QUEUE_LENGTH, sizeof( IPStackEvent_t ) );
+    FreeRTOS_debug_printf(("8"));
     configASSERT( xNetworkEventQueue != NULL );
-
+    FreeRTOS_debug_printf(("9"));
     if( xNetworkEventQueue != NULL )
     {
         #if ( configQUEUE_REGISTRY_SIZE > 0 )
@@ -1173,6 +1181,7 @@ BaseType_t FreeRTOS_IPInit( const uint8_t ucIPAddress[ ipIP_ADDRESS_LENGTH_BYTES
 
         if( xNetworkBuffersInitialise() == pdPASS )
         {
+            FreeRTOS_debug_printf(("10"));
             /* Store the local IP and MAC address. */
             xNetworkAddressing.ulDefaultIPAddress = FreeRTOS_inet_addr_quick( ucIPAddress[ 0 ], ucIPAddress[ 1 ], ucIPAddress[ 2 ], ucIPAddress[ 3 ] );
             xNetworkAddressing.ulNetMask = FreeRTOS_inet_addr_quick( ucNetMask[ 0 ], ucNetMask[ 1 ], ucNetMask[ 2 ], ucNetMask[ 3 ] );
@@ -1191,12 +1200,14 @@ BaseType_t FreeRTOS_IPInit( const uint8_t ucIPAddress[ ipIP_ADDRESS_LENGTH_BYTES
                 {
                     /* The IP address is set from the value passed in. */
                     *ipLOCAL_IP_ADDRESS_POINTER = xNetworkAddressing.ulDefaultIPAddress;
-
+                     FreeRTOS_debug_printf((" 11-1 "));
                     /* Added to prevent ARP flood to gateway.  Ensure the
                     * gateway is on the same subnet as the IP address. */
                     if( xNetworkAddressing.ulGatewayAddress != 0UL )
                     {
+                        FreeRTOS_debug_printf((" 11-2 "));
                         configASSERT( ( ( *ipLOCAL_IP_ADDRESS_POINTER ) & xNetworkAddressing.ulNetMask ) == ( xNetworkAddressing.ulGatewayAddress & xNetworkAddressing.ulNetMask ) );
+                        FreeRTOS_debug_printf((" 11-3 "));
                     }
                 }
             #endif /* ipconfigUSE_DHCP == 1 */
@@ -1208,6 +1219,7 @@ BaseType_t FreeRTOS_IPInit( const uint8_t ucIPAddress[ ipIP_ADDRESS_LENGTH_BYTES
             /* Prepare the sockets interface. */
             vNetworkSocketsInit();
 
+            FreeRTOS_debug_printf((" 11"));
             /* Create the task that processes Ethernet and stack events. */
             xReturn = xTaskCreate( prvIPTask,
                                    "IP-task",
@@ -1215,6 +1227,8 @@ BaseType_t FreeRTOS_IPInit( const uint8_t ucIPAddress[ ipIP_ADDRESS_LENGTH_BYTES
                                    NULL,
                                    ipconfigIP_TASK_PRIORITY,
                                    &( xIPTaskHandle ) );
+
+            FreeRTOS_debug_printf((" 12"));
         }
         else
         {
@@ -2988,7 +3002,7 @@ void vReturnEthernetFrame( NetworkBufferDescriptor_t * pxNetworkBuffer,
 /*-----------------------------------------------------------*/
 
 
-#if ( ipconfigHAS_PRINTF != 0 )
+#if ( ipconfigHAS_PRINTF != 0 && 0 )
 
     #ifndef ipMONITOR_MAX_HEAP
 

@@ -92,6 +92,7 @@ static uint32_t ulPCAPSendFailures = 0;
 static BaseType_t xConfigNetworkInterfaceToUse = configNETWORK_INTERFACE_TO_USE;
 static BaseType_t xInvalidInterfaceDetected = pdFALSE;
 
+BaseType_t Started = pdFALSE;
 /* ======================= API Function definitions ========================= */
 
 /*!
@@ -205,6 +206,7 @@ static int prvCreateThreadSafeBuffers( void )
     {
         if( xSendBuffer == NULL )
         {
+            FreeRTOS_debug_printf( ( "Creatubg buffer of size %d\r\n", sizeof( *xSendBuffer ) - sizeof( xSendBuffer->ucArray ) + xSEND_BUFFER_SIZE + 1 ) );
             xSendBuffer = ( StreamBuffer_t * ) malloc( sizeof( *xSendBuffer ) - sizeof( xSendBuffer->ucArray ) + xSEND_BUFFER_SIZE + 1 );
 
             if( xSendBuffer == NULL )
@@ -543,6 +545,9 @@ static int prvCreateWorkerThreads( void )
             ret = pdFAIL;
             FreeRTOS_printf( ( "xTaskCreate could not create a new task\n" ) );
         }
+
+//        pthread_t Helper_Thread;
+//        pthread_create( &Helper_Thread, NULL, Helper_function, NULL);
     }
 
     return ret;
@@ -622,6 +627,8 @@ static void pcap_callback( unsigned char * user,
                            const struct pcap_pkthdr * pkt_header,
                            const u_char * pkt_data )
 {
+    if(Started == pdFALSE)
+    {
     FreeRTOS_debug_printf( ( "Receiving < ===========  network callback user: %s len: %d caplen: %d\n",
                              user,
                              pkt_header->len,
@@ -634,6 +641,7 @@ static void pcap_callback( unsigned char * user,
     {
         uxStreamBufferAdd( xRecvBuffer, 0, ( const uint8_t * ) pkt_header, sizeof( *pkt_header ) );
         uxStreamBufferAdd( xRecvBuffer, 0, ( const uint8_t * ) pkt_data, ( size_t ) pkt_header->caplen );
+    }
     }
 }
 
@@ -746,8 +754,11 @@ static void prvInterruptSimulatorTask( void * pvParameters )
          * handles pacap Rx into the FreeRTOS simulator contain another packet? */
         if( uxStreamBufferGetSize( xRecvBuffer ) > sizeof( xHeader ) )
         {
+            FreeRTOS_debug_printf( ( "Got something %d \r\n", uxStreamBufferGetSize( xRecvBuffer ) ) );
             /* Get the next packet. */
             uxStreamBufferGet( xRecvBuffer, 0, ( uint8_t * ) &xHeader, sizeof( xHeader ), pdFALSE );
+
+            FreeRTOS_debug_printf( ( "Length = %ul size = %d\r\n", xHeader.len, sizeof(xHeader.len) ) );
             uxStreamBufferGet( xRecvBuffer, 0, ( uint8_t * ) ucRecvBuffer, ( size_t ) xHeader.len, pdFALSE );
             pucPacketData = ucRecvBuffer;
             pxHeader = &xHeader;
@@ -887,4 +898,17 @@ static void print_hex( unsigned const char * const bin_data,
     }
 
     FreeRTOS_debug_printf( ( "\n" ) );
+}
+
+StreamBuffer_t * GetRecvBuffer( void )
+{
+    if( xRecvBuffer != NULL )
+    {
+        return xRecvBuffer;
+    }
+    else
+    {
+        /* Return an error. */
+        return ( StreamBuffer_t * ) ( ~0UL );
+    }
 }
