@@ -434,6 +434,9 @@ static void prvIPTask( void * pvParameters )
 
         iptraceNETWORK_EVENT_RECEIVED( xReceivedEvent.eEventType );
 
+        if(xReceivedEvent.eEventType != eNoEvent)
+            FreeRTOS_debug_printf( ( "Some event happened." ) );
+
         switch( xReceivedEvent.eEventType )
         {
             case eNetworkDownEvent:
@@ -443,7 +446,7 @@ static void prvIPTask( void * pvParameters )
                 break;
 
             case eNetworkRxEvent:
-
+                FreeRTOS_debug_printf( ( " Received" ) );
                 /* The network hardware driver has received a new packet.  A
                  * pointer to the received buffer is located in the pvData member
                  * of the received event structure. */
@@ -1693,6 +1696,7 @@ static void prvProcessEthernetPacket( NetworkBufferDescriptor_t * const pxNetwor
             switch( pxEthernetHeader->usFrameType )
             {
                 case ipARP_FRAME_TYPE:
+                    FreeRTOS_debug_printf( ("ARP frame") );
 
                     /* The Ethernet frame contains an ARP packet. */
                     if( pxNetworkBuffer->xDataLength >= sizeof( ARPPacket_t ) )
@@ -1707,7 +1711,7 @@ static void prvProcessEthernetPacket( NetworkBufferDescriptor_t * const pxNetwor
                     break;
 
                 case ipIPv4_FRAME_TYPE:
-
+                    FreeRTOS_debug_printf( ("IPv4 frame") );
                     /* The Ethernet frame contains an IP packet. */
                     if( pxNetworkBuffer->xDataLength >= sizeof( IPPacket_t ) )
                     {
@@ -1721,6 +1725,7 @@ static void prvProcessEthernetPacket( NetworkBufferDescriptor_t * const pxNetwor
                     break;
 
                 default:
+                    FreeRTOS_debug_printf( ("NON standard frame: %08x\r\n", pxEthernetHeader->usFrameType) );
                     /* No other packet types are handled.  Nothing to do. */
                     eReturned = eReleaseBuffer;
                     break;
@@ -1991,12 +1996,14 @@ static eFrameProcessingResult_t prvProcessIPPacket( IPPacket_t * pxIPPacket,
     }
     else
     {
+        FreeRTOS_debug_printf(("IPv4 Checks pass -> "));
         ucProtocol = pxIPPacket->xIPHeader.ucProtocol;
         /* Check if the IP headers are acceptable and if it has our destination. */
         eReturn = prvAllowIPPacket( pxIPPacket, pxNetworkBuffer, uxHeaderLength );
 
         if( eReturn == eProcessBuffer )
         {
+            FreeRTOS_debug_printf(("Process Buffer\r\n"));
             /* Are there IP-options. */
             if( uxHeaderLength > ipSIZE_OF_IPv4_HEADER )
             {

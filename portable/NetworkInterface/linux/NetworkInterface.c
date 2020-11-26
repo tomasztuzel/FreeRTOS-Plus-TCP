@@ -754,11 +754,11 @@ static void prvInterruptSimulatorTask( void * pvParameters )
          * handles pacap Rx into the FreeRTOS simulator contain another packet? */
         if( uxStreamBufferGetSize( xRecvBuffer ) > sizeof( xHeader ) )
         {
-            FreeRTOS_debug_printf( ( "Got something %d \r\n", uxStreamBufferGetSize( xRecvBuffer ) ) );
+            FreeRTOS_debug_printf( ( "Buffer Size: %d\r\n", uxStreamBufferGetSize( xRecvBuffer ) ) );
             /* Get the next packet. */
             uxStreamBufferGet( xRecvBuffer, 0, ( uint8_t * ) &xHeader, sizeof( xHeader ), pdFALSE );
 
-            FreeRTOS_debug_printf( ( "Length = %ul size = %d\r\n", xHeader.len, sizeof(xHeader.len) ) );
+            FreeRTOS_debug_printf( ( "Length of data = %u\r\n", xHeader.len ) );
             uxStreamBufferGet( xRecvBuffer, 0, ( uint8_t * ) ucRecvBuffer, ( size_t ) xHeader.len, pdFALSE );
             pucPacketData = ucRecvBuffer;
             pxHeader = &xHeader;
@@ -768,15 +768,18 @@ static void prvInterruptSimulatorTask( void * pvParameters )
             /* Check for minimal size. */
             if( pxHeader->len >= sizeof( EthernetHeader_t ) )
             {
+                FreeRTOS_debug_printf( ( "Proper header len\r\n" ) );
                 eResult = ipCONSIDER_FRAME_FOR_PROCESSING( pucPacketData );
             }
             else
             {
+                FreeRTOS_debug_printf( ( "Header length NOT proper\r\n" ) );
                 eResult = eReleaseBuffer;
             }
 
             if( eResult == eProcessBuffer )
             {
+                FreeRTOS_debug_printf( ( "Data considered\r\n" ) );
                 /* Will the data fit into the frame buffer? */
                 if( pxHeader->len <= ipTOTAL_ETHERNET_FRAME_SIZE )
                 {
@@ -789,6 +792,7 @@ static void prvInterruptSimulatorTask( void * pvParameters )
 
                     if( pxNetworkBuffer != NULL )
                     {
+                        FreeRTOS_debug_printf( ( "Len proper and got buffer\r\n" ) );
                         memcpy( pxNetworkBuffer->pucEthernetBuffer, pucPacketData, pxHeader->len );
                         pxNetworkBuffer->xDataLength = ( size_t ) pxHeader->len;
 
@@ -815,6 +819,10 @@ static void prvInterruptSimulatorTask( void * pvParameters )
                                  * interrupt. */
                                 vReleaseNetworkBufferAndDescriptor( pxNetworkBuffer );
                                 iptraceETHERNET_RX_EVENT_LOST();
+                            }
+                            else
+                            {
+                                FreeRTOS_debug_printf( ( "Sent to IPtask\r\n" ) );
                             }
                         }
                         else

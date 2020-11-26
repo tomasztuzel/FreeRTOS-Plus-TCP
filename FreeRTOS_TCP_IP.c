@@ -3181,6 +3181,8 @@
          * pucRecvData will point to the first byte of the TCP payload. */
         ulReceiveLength = ( uint32_t ) prvCheckRxData( *ppxNetworkBuffer, &pucRecvData );
 
+        FreeRTOS_debug_printf( ( "The length of the data is: %d\r\n",ulReceiveLength ) );
+
         if( pxSocket->u.xTCP.ucTCPState >= ( uint8_t ) eESTABLISHED )
         {
             if( pxTCPWindow->rx.ulCurrentSequenceNumber == ( ulSequenceNumber + 1UL ) )
@@ -3509,6 +3511,7 @@
             {
                 pxSocket->u.xTCP.ucRepCount = 0U;
 
+                FreeRTOS_debug_printf( ( "The state of the socket [0x%08x] is: %d\r\n", pxSocket, pxSocket->u.xTCP.ucTCPState ) );
                 if( pxSocket->u.xTCP.ucTCPState == ( uint8_t ) eTCP_LISTEN )
                 {
                     /* The matching socket is in a listening state.  Test if the peer
